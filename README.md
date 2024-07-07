@@ -10,6 +10,7 @@ The following installations will be based on your operating system. Just click t
 2. [Docker Engine](https://docs.docker.com/engine/install/)
 3. (Optional if running on Ubuntu distribution)[Docker Compose](https://docs.docker.com/compose/install/)
 4. (Optional) Ubuntu distribution
+5. [Terraform](https://developer.hashicorp.com/terraform/install)
 
 Create, activate, and deactivate a conda environment with Python version 3.9.16. Make sure to run the commands one at a time
 
@@ -24,11 +25,144 @@ Install the required packages
 pip install -r requirements.txt
 ```
 
+## Experiment Tracking using MLFLOW
+
+### Configuring AWS
+
+Since the model artifacts are going to be stored in S3 buckets, we will have to configure our AWS through the Identity and Access Management (IAM) services. Instructions for doing that can be found [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html). We'll then use the generated access key id and the secret access key to configure it locally. The second command is to check if everything is okay.
+
+```bash
+aws configure
+ls ~/.aws
+```
+
+For this project, I will create a new AWS profile (`demiga-g`) different from the default one. 
+
+- First approach involves using the command and filling in the required entries :
+
+```bash
+aws configure --profile demiga-g
+```
+
+- Second way is by editing the `credentials` file. 
+
+```bash
+nano ~/.aws/credentials
+nano ~/.aws/config
+```
+
+### Using Terraform to Manage AWS Resources
+
+Terraform is used to manage the aws infrastructure which in this case will include the EC2 instance, S3 bucket, and Relational Database Services (PostgreSQL). These configuration are saved in the `main.tf` and `variables.tf` files and some of the important commands to run the file include the following:
+
+```bash
+terraform init
+terraform fmt
+terraform validate
+```
+
+### Accessing the Remote Machine Locally
+
+To access a Linux-based EC2 instance via SSH, you’ll need an SSH key pair. For that, run the following commands to generate a new SSH key pair:
+
+```bash
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/mlops-ete-key-pair
+```
+This will create a public and private key using the `RSA` algorithm with 4096 bits and store them in the `.ssh` folder in the `home` directory.
+
+Now you can run the following command to create the needed resources in AWS
+
+```bash
+terraform apply
+```
+
+The EC2 instance is then connected to the local machine using the command below. Note that the public ip address changes when the instance is terminated. And for this project we use the Amazon Linux given that it has Python installed thus saving me some trouble of installing it. 
+
+```bash
+ssh -i ~/.ssh/mlops-ete-key-pair  ec2-user@54.197.95.246
+```
+To simplify this process on every subsequent connections, we can create a configuration file using the command:
+
+```bash
+nano ~/.ssh/config
+```
+With the file opened, copy the following snippet and modify as necessary. 
+
+```bash
+Host mlops-ete
+    HostName 54.82.38.62
+    User user
+    IdentityFile /home/midega-g/.ssh/mlops-ete-key-pair
+    StrictHostKeyChecking no
+```
+That is:
+
+- `Host` is your preferred host name
+- `User` is `user` if your created an instance with aws or `ubuntu` if you used ubuntu. Note that every time you  terminate the instance, you'll have to change the value here too.
+- `IdentityFile` is the full path to the key pair
+- `StrictHostKeyChecking` set to `no` ensures that we are not frequently asked if we trust the key.
+
+With these set, we can now run (remember to change the name based on what you used):
+
+```bash
+ssh mlops-ete
+```
+Once in the remote machine, run the following commands to update the machine and install the necessary packages and libraries for use:
+
+```bash
+sudo yum update && sudo yum upgrade -y
+sudo yum install python3-pip -y
+pip3 install mlflow boto3 psycopg2-binary
+```
+It is also important to run `aws configure` to configure the aws credentials in the remote machine just like we did in the local machine.
+
+To logout of the the EC2 instance use `logout` command.
+
+### Running MLFlow Remotely
+
+With everything configured, we run the following command to get mlflow server up. 
+
+- Remember to replace the values in the in the bracket with the relevant entries
+
+```bash
+mlflow server \
+	-h 0.0.0.0 \
+	-p 5000 \
+	--backend-store-uri postgresql://<DB_USER>:<DB_PASSWORD>@<DB_ENDPOINT>:<DB_PORT>/<DB_NAME> \
+	--default-artifact-root s3://midega-mlflow-artifacts
+```
+
+This would look like this:
+
+```bash
+mlflow server \
+	-h 0.0.0.0 \
+	-p 5000 \
+	--backend-store-uri postgresql://postgres:password@ifood-artifacts.cz4u8uwcotgt.us-east-1.rds.amazonaws.com:5432/mlflow_ifood_db \
+	--default-artifact-root s3://midega-mlflow-artifacts
+```
+
+To access the MLFlow tracking serve in the browser or local machine, you can use the EC2 instance IP address and then append the port number. Something like this:
+
+```bash
+54.82.38.62:5000
+```
+
+### Tracking the Models
+
+Now you can view the model performance by logging them into MLFlow by running the notebook or 
 
 
 
 
+To delete these resource, you can either run the first command to remove all of them at a go, or the second command to remove one, or the third to remove more than one:
 
+```bash
+terraform destroy
+terraform destroy -target aws_db_instance.postgresql_db_ete_mlops
+```
 
-
-
+s3:CreateBucket
+s3:ListBucket
+s3:GetObject
+s3:PutObject
