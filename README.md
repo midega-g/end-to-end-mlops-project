@@ -164,7 +164,7 @@ Running the server locally but storing the artifacts in S3 bucket:
 mlflow server \
 	--backend-store-uri sqlite:///mlflow_runs.db \
 	--default-artifact-root s3://midega-mlflow-artifacts
-	```
+```
 
 ### Tracking the Models
 
