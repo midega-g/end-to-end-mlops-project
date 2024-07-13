@@ -90,7 +90,7 @@ With the file opened, copy the following snippet and modify as necessary.
 
 ```bash
 Host mlops-ete
-    HostName 54.82.38.62
+    HostName 16.171.136.194
     User user
     IdentityFile /home/midega-g/.ssh/mlops-ete-key-pair
     StrictHostKeyChecking no
@@ -114,9 +114,20 @@ sudo yum update && sudo yum upgrade -y
 sudo yum install python3-pip -y
 pip3 install mlflow boto3 psycopg2-binary
 ```
-It is also important to run `aws configure` to configure the aws credentials in the remote machine just like we did in the local machine.
+It is also important to run `aws configure` to configure the aws credentials in the remote machine just like we did in the local machine and import it as shown below:
+
+```bash
+aws configure export-credentials --profile demiga-g
+```
 
 To logout of the the EC2 instance use `logout` command.
+
+To delete these resource, you can either run the first command to remove all of them at a go, or the second command to remove one, or the third to remove more than one:
+
+```bash
+terraform destroy
+terraform destroy -target aws_db_instance.postgresql_db_ete_mlops
+```
 
 ### Running MLFlow Remotely
 
@@ -131,38 +142,45 @@ mlflow server \
 	--backend-store-uri postgresql://<DB_USER>:<DB_PASSWORD>@<DB_ENDPOINT>:<DB_PORT>/<DB_NAME> \
 	--default-artifact-root s3://midega-mlflow-artifacts
 ```
-
 This would look like this:
 
 ```bash
 mlflow server \
 	-h 0.0.0.0 \
 	-p 5000 \
-	--backend-store-uri postgresql://postgres:password@ifood-artifacts.cz4u8uwcotgt.us-east-1.rds.amazonaws.com:5432/mlflow_ifood_db \
+	--backend-store-uri postgresql://postgres:password@ifood-artifacts.c7g4iwo6ky4f.eu-north-1.rds.amazonaws.com:5432/mlflow_ifood_db \
 	--default-artifact-root s3://midega-mlflow-artifacts
 ```
 
 To access the MLFlow tracking serve in the browser or local machine, you can use the EC2 instance IP address and then append the port number. Something like this:
 
 ```bash
-54.82.38.62:5000
+16.171.136.194:5000
 ```
+
+Running the server locally but storing the artifacts in S3 bucket:
+
+```bash
+mlflow server \
+	--backend-store-uri sqlite:///mlflow_runs.db \
+	--default-artifact-root s3://midega-mlflow-artifacts
+	```
 
 ### Tracking the Models
 
-Now you can view the model performance by logging them into MLFlow by running the notebook or 
+Five machine learning models were used to find a suitable binary classifier with high precision score. Apparently, the scores were low and ranging between 0.16 to 0.22.  
 
 
 
+## Deployment
 
-To delete these resource, you can either run the first command to remove all of them at a go, or the second command to remove one, or the third to remove more than one:
+### Batch Deployment
 
 ```bash
-terraform destroy
-terraform destroy -target aws_db_instance.postgresql_db_ete_mlops
+python 03_batch_deployment.py \
+	--input_data_path='../data/val_df2.csv' \
+	--experiment_id=6 \
+	--run_id='45a3990ff1e140afbe48334a8422bec7' \
+	--output_data_path='../data/predictions.csv'
 ```
 
-s3:CreateBucket
-s3:ListBucket
-s3:GetObject
-s3:PutObject
