@@ -61,7 +61,8 @@ def scrub_data(df):
     df['Onboard_Days'] = (end_fiscal - df['Dt_Customer']).dt.days
     
     # Droping redundant features
-    df = df.drop(red_ftrs_1, axis=1)
+    existing_red_ftrs = [col for col in red_ftrs_1 if col in df.columns]
+    df = df.drop(existing_red_ftrs, axis=1)
     
     # handle missing values and scale numeric data
     num_transformer = Pipeline(steps=[
