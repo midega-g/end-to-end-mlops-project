@@ -10,7 +10,7 @@ terraform {
 
 # configure the aws provider
 provider "aws" {
-  region  = "us-east-1"
+  region  = "eu-north-1"
   profile = "demiga-g"
 }
 
@@ -59,8 +59,8 @@ resource "aws_security_group" "ec2_instance_security_group" {
 
 # ec2 instance configuration
 resource "aws_instance" "instance_ete_mlops" {
-  ami             = "ami-06c68f701d8090592"
-  instance_type   = "t2.micro"
+  ami             = "ami-052387465d846f3fc"
+  instance_type   = "t3.micro"
   key_name        = aws_key_pair.deployer.key_name
   security_groups = [aws_security_group.ec2_instance_security_group.name]
 
@@ -120,6 +120,7 @@ data "aws_security_group" "default" {
   }
 }
 
+
 # add ingress rule to the default security group that allows postgresql
 # to run in the remote machine
 resource "aws_security_group_rule" "allow_postgres" {
@@ -130,6 +131,7 @@ resource "aws_security_group_rule" "allow_postgres" {
   security_group_id        = data.aws_security_group.default.id
   source_security_group_id = aws_security_group.ec2_instance_security_group.id
 }
+
 
 # postgres database configuration
 resource "aws_db_instance" "postgresql_db_ete_mlops" {
