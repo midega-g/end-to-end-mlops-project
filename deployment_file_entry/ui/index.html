@@ -1,0 +1,62 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Response Prediction</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 50px auto; text-align: center; }
+        input[type="file"] { margin: 20px 0; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Customer Details CSV</h1>
+        <form id="upload-form">
+            <input type="file" id="file" accept=".csv" required />
+            <button type="submit">Upload & Predict</button>
+        </form>
+        <a id="download-link" href="#" style="display: none;">Download Predictions</a>
+    </div>
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const fileInput = document.getElementById('file');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.getElementById('download-link');
+                link.href = url;
+                link.download = 'predictions.csv';
+                link.style.display = 'block';
+            } else {
+                alert('Error processing the file');
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSV Processor</title>
+</head>
+<body>
+  <form action="/upload_predict" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" id="file">
+    <input type="submit" value="Upload and Process">
+  </form>
+</body>
+</html>
+
