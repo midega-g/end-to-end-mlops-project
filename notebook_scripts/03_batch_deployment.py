@@ -25,7 +25,6 @@ output_data_path = args.output_data_path
 # fill in AWS profile
 os.environ["AWS_PROFILE"] = "demiga-g"
 
-
 # Setting tracking uri (unique resource identifier)
 TRACKING_SERVER_HOST = '127.0.0.1'  # '16.171.136.194'
 mlflow.set_tracking_uri(f"http://{TRACKING_SERVER_HOST}:5000")
