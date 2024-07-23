@@ -91,7 +91,7 @@ With the file opened, copy the following snippet and modify as necessary.
 ```bash
 Host mlops-ete
     HostName 16.171.136.194
-    User user
+    User ec2-user
     IdentityFile /home/midega-g/.ssh/mlops-ete-key-pair
     StrictHostKeyChecking no
 ```
@@ -174,6 +174,12 @@ Five machine learning models were used to find a suitable binary classifier with
 
 ## Deployment
 
+Creating a virtual environment with only the packages required to run the deployed model in a web-service.
+
+```bash
+pipenv install scikit-learn==1.0.2 fastapi --python=3.9
+```
+
 ### Batch Deployment
 
 ```bash
@@ -184,3 +190,28 @@ python 03_batch_deployment.py \
 	--output_data_path='../data/predictions.csv'
 ```
 
+
+```bash
+docker build -t customer_response:v1 .
+docker run -v ~/.aws:/root/.aws \
+	-it \ 
+	--rm \
+	--name ifood_response \
+	-p 9696:9696  \
+	customer_response:v1
+```
+
+Pushing Docker image to Docker Hub
+
+```bash
+docker tag customer_response:v1 midega/ifood-response-classifier
+docker login -u "midega" -p "<your password>" docker.io
+docker push midega/ifood-response-classifier
+```
+terraform state rm aws_ecs_cluster.ecs_cluster_ete_mlops aws_ecs_service.ifood_response_api aws_ecs_task_definition.ecs_task_ete_mlops
+
+CMD-SHELL,curl-f http://localhost/||exit 1
+
+```bash
+python -m http.server
+```
