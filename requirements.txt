@@ -11,4 +11,5 @@ mlflow
 boto3
 awscli
 ipykernel
+fastapi
 -e .
