@@ -1,19 +1,29 @@
 import io
 import pickle
 
+from fastapi.templating import Jinja2Templates
 import pandas as pd
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from mlops import logger
 from mlops.util_funcs import scrub_data
 
 
+app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/data", StaticFiles(directory="data"), name="data")
+
+templates = Jinja2Templates(directory="templates")
+
+
 def load_model():
     """Load a model from a pickle file."""
     logger.info("Loading model...")
-    with open('data/model.pkl', 'rb') as file:
+    with open('model/model.pkl', 'rb') as file:
         model = pickle.load(file)
         logger.info("Model loaded successfully")
     return model
@@ -27,17 +37,13 @@ def predict_responses(features):
     return y_pred
 
 
-app = FastAPI()
-
-
-@app.get('/')
-def route_page():
-    """Welcome page notification."""
-    return {"message": "Welcome to the Customer Response Prediction API"}
-
+@app.get('/', response_class=HTMLResponse)
+def route_page(request: Request):
+    """Home endpoint."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/upload")
-async def upload_predict(file: UploadFile = File(...)):
+async def upload_predict(request: Request, file: UploadFile = File(...)):
     """Handle CSV file uploads for predictions."""
 
     # check if file is CSV
@@ -60,8 +66,9 @@ async def upload_predict(file: UploadFile = File(...)):
     df.to_csv(output_file, index=False)
 
     logger.info('Returning predictions as csv file: %s', output_file)
-    return FileResponse(output_file, filename=output_file)
+    return templates.TemplateResponse("index.html", {"request": request, "download_link": "/data/predictions.csv"})
+    # return FileResponse(output_file, filename=output_file)
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9696)

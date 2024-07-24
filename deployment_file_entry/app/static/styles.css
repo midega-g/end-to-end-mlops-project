@@ -1,0 +1,71 @@
+/* Import Google font - Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+/* General styles */
+body {
+    font-family: "Poppins", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #d9e2f8; /* Light background color */
+}
+
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    text-align: center;
+    background: #fff;
+    border-radius: 5px;
+    padding: 30px;
+    box-shadow: 7px 7px 12px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #6990F2; /* Primary color */
+    font-size: 27px;
+    font-weight: 600;
+}
+
+p {
+    color: #404040; /* Text color */
+    font-size: 16px;
+}
+
+input[type="file"] {
+    margin: 20px 0;
+}
+
+.inputfile-label {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #6990f2; /* Primary button color */
+    color: white;
+    font-size: 16px;
+}
+
+.inputfile-label:hover {
+    background-color: #4056a1; /* Darker shade on hover */
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #6990f2;
+    color: white;
+    margin: 10px;
+}
+
+.btn:hover {
+    background-color: #4056a1;
+}
+
+#download-link {
+    text-decoration: none; /* Remove underline */
+}
