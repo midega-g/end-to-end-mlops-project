@@ -77,7 +77,7 @@ resource "aws_instance" "instance_ete_mlops" {
 
 # s3 bucket configuration
 resource "aws_s3_bucket" "bucket_ete_mlops" {
-  bucket = "midega-mlflow-artifacts"
+  bucket        = "midega-mlflow-artifacts"
   force_destroy = true
 }
 
@@ -157,8 +157,52 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
   }
 }
 
+###################### uncomment to create private ECR (charges may apply) ######################
+
+# # configuring ECR resources
+# resource "aws_ecr_repository" "ecr_ete_mlops" {
+#   name                 = "docker_ecr_image"
+#   image_tag_mutability = "MUTABLE"
+
+#   image_scanning_configuration {
+#     scan_on_push = false
+#   }
+
+#   force_delete = true
+# }
+
+
+# # ensuring that dockerfile exists in ecr before running prediction script
+# resource "null_resource" "ecr_image" {
+#   triggers = {
+#     python_file = md5(file("/home/midega-g/Desktop/Learning/end-to-end-mlops-project/deployment_file_entry/app/main.py"))
+#     docker_file = md5(file("/home/midega-g/Desktop/Learning/end-to-end-mlops-project/deployment_file_entry/Dockerfile"))
+#   }
+
+#   provisioner "local-exec" {
+#     command = <<EOF
+#           aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.ecr_ete_mlops.repository_url}
+#           docker build -t ${aws_ecr_repository.ecr_ete_mlops.repository_url} -f deployment_file_entry/Dockerfile deployment_file_entry
+#           docker push ${aws_ecr_repository.ecr_ete_mlops.repository_url}:latest
+#         EOF
+
+#   }
+# }
+
+# ## wait for the image to be uploaded, before script runs
+# data "aws_ecr_image" "load_docker_image" {
+#   depends_on      = [null_resource.ecr_image]
+#   repository_name = aws_ecr_repository.ecr_ete_mlops.name
+#   image_tag       = "latest"
+# }
+
+# output "image_uri" {
+#   value = "${aws_ecr_repository.ecr_ete_mlops.repository_url}:${data.aws_ecr_image.load_docker_image.image_tag}"
+# }
+
 
 ###################### uncomment to create custome s3 bucket policy if needed ######################
+
 # # IAM policy
 # resource "aws_iam_policy" "s3_bucket_policies" {
 #   name        = "S3BucketPolicy"
@@ -240,7 +284,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 ###################### uncomment to create ECS resources (charges apply) ######################
 
 
-# IAM role configuration for ECS task 
+# # IAM role configuration for ECS task 
 # resource "aws_iam_role" "ecs_task_execution_role" {
 #   name = "ecsTaskExecutionRole2"
 #   description = "Role for Amazon ECS taks"
@@ -287,7 +331,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 
 
 # # IAM role policy attachment for ECS task
-# resource "aws_iam_role_policy_attachment" "esc_role_policy_attach" {
+# resource "aws_iam_role_policy_attachment" "ecs_role_policy_attach" {
 #   role       = aws_iam_role.ecs_task_execution_role.name
 #   policy_arn = aws_iam_policy.ecs_task_execution_policy.arn
 # }
@@ -301,8 +345,8 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 # # ECS task definition configuration
 # resource "aws_ecs_task_definition" "ecs_task_ete_mlops" {
 #   family                   = "ifood-response-ecs"
-#   cpu                      = 2048
-#   memory                   = 4096
+#   cpu                      = 512
+#   memory                   = 1024
 #   network_mode             = "awsvpc"
 #   requires_compatibilities = ["FARGATE"]
 #   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
@@ -310,9 +354,13 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 #   container_definitions = jsonencode([
 #     {
 #       name      = "ifood-response-container"
-#       image     = "midega/ifood-response-classifier:latest"
-#       cpu       = 2048
-#       memory    = 3072
+#       # uncomment for pulling the image from docker hub
+#       # image     = "midega/ifood-response-classifier:latest"
+
+#       # uncomment for pulling from aws ecr
+#       image     = "public.ecr.aws/z5m0q2k8/docker_ecr_image:latest"
+#       cpu       = 512
+#       memory    = 1024
 #       essential = true
 #       portMappings = [
 #         {
@@ -321,7 +369,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 #           protocol      = "tcp"
 #         }
 #       ]
-      
+
 #       logConfiguration = {
 #         logDriver = "awslogs"
 #         options = {
@@ -331,7 +379,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 #           "awslogs-region": "eu-north-1"
 #         }
 #       }
-    
+
 #     }
 #   ])
 
@@ -377,6 +425,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 #     from_port   = 0
 #     to_port     = 0
 #     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
 #   }
 # }
 
