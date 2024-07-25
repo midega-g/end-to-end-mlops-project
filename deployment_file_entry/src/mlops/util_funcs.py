@@ -1,3 +1,5 @@
+# pylint: disable=line-too-long
+
 import mlflow
 import numpy as np
 import pandas as pd
