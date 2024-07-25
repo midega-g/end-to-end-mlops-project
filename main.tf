@@ -158,181 +158,7 @@ resource "aws_db_instance" "postgresql_db_ete_mlops" {
 }
 
 
-# IAM role configuration for ECS task 
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole2"
-  description = "Role for Amazon ECS taks"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Action = "sts:AssumeRole",
-      Effect = "Allow",
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
-    }]
-  })
-}
-
-
-# IAM policy configuration for ECS task
-resource "aws_iam_policy" "ecs_task_execution_policy" {
-  name = "ECSTaskExecutionRolePolicy"
-  description = "Provides access to other AWS service resources that are required to run Amazon ECS tasks"
-  policy = jsonencode(
-    {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "kms:Decrypt",
-                "secretsmanager:GetSecretValue",
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-  )
-}
-
-
-# IAM role policy attachment for ECS task
-resource "aws_iam_role_policy_attachment" "esc_role_policy_attach" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = aws_iam_policy.ecs_task_execution_policy.arn
-}
-
-
-resource "aws_cloudwatch_log_group" "ecs_task_logs" {
-  name = "/ecs/ifood-response"
-  retention_in_days = 1
-}
-
-# ECS task definition configuration
-resource "aws_ecs_task_definition" "ecs_task_ete_mlops" {
-  family                   = "ifood-response-ecs"
-  cpu                      = 2048
-  memory                   = 4096
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "ifood-response-container"
-      image     = "midega/ifood-response-classifier:latest"
-      cpu       = 2048
-      memory    = 3072
-      essential = true
-      portMappings = [
-        {
-          containerPort = 9696
-          hostPort      = 9696
-          protocol      = "tcp"
-        }
-      ]
-      
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group" : "${aws_cloudwatch_log_group.ecs_task_logs.name}",
-          "awslogs-stream-prefix" : "ecs-task-logs",
-          "awslogs-datetime-format" : "%Y-%m-%dT%H:%M:%",
-          "awslogs-region": "eu-north-1"
-        }
-      }
-    
-    }
-  ])
-
-  runtime_platform {
-    operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64"
-  }
-}
-
-# ECS cluster creation configuration
-resource "aws_ecs_cluster" "ecs_cluster_ete_mlops" {
-  name = "ifood-response-ecs-cluster"
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-}
-
-
-# ECS service security group
-resource "aws_security_group" "ecs_allow_all" {
-  name = "ecs-all-inbounds-ips"
-  description = "Allows all inbound traffic"
-  vpc_id = data.aws_vpc.default.id
-
-    ingress {
-    from_port   = 9696
-    to_port     = 9696
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-    ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-    egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-  }
-}
-
-
-# select all subnet within the vpc
-data "aws_subnet" "all_subnets" {
-  availability_zone = "eu-north-1b"
-}
-
-
-# ECS service configuration
-resource "aws_ecs_service" "ifood_response_api" {
-  name = "ifood-response-api"
-  cluster = aws_ecs_cluster.ecs_cluster_ete_mlops.id
-  task_definition = aws_ecs_task_definition.ecs_task_ete_mlops.arn
-  desired_count = 1
-  launch_type = "FARGATE"
-
-  network_configuration {
-    subnets = [data.aws_subnet.all_subnets.id]
-    assign_public_ip = true
-    security_groups = [aws_security_group.ecs_allow_all.id]
-  }
-}
-
-resource "aws_vpc_endpoint" "secrets_manager" {
-  vpc_id            = data.aws_vpc.default.id
-  service_name      = "com.amazonaws.eu-north-1.secretsmanager"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = [data.aws_subnet.all_subnets.id]
-
-  security_group_ids = [aws_security_group.ecs_allow_all.id]
-}
-
-
-
-
-## uncomment to create custome s3 bucket policy if needed
+###################### uncomment to create custome s3 bucket policy if needed ######################
 # # IAM policy
 # resource "aws_iam_policy" "s3_bucket_policies" {
 #   name        = "S3BucketPolicy"
@@ -384,6 +210,8 @@ resource "aws_vpc_endpoint" "secrets_manager" {
 # }
 
 
+###################### uncomment to create secret manager for credentials (charges apply) ######################
+
 # KMS key
 # resource "aws_kms_key" "my_cmk" {
 #   description             = "KMS key for encrypting secrets"
@@ -406,4 +234,179 @@ resource "aws_vpc_endpoint" "secrets_manager" {
 #     username = ""
 #     password = ""
 #   })
+# }
+
+
+###################### uncomment to create ECS resources (charges apply) ######################
+
+
+# IAM role configuration for ECS task 
+# resource "aws_iam_role" "ecs_task_execution_role" {
+#   name = "ecsTaskExecutionRole2"
+#   description = "Role for Amazon ECS taks"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [{
+#       Action = "sts:AssumeRole",
+#       Effect = "Allow",
+#       Principal = {
+#         Service = "ecs-tasks.amazonaws.com"
+#       }
+#     }]
+#   })
+# }
+
+
+# # IAM policy configuration for ECS task
+# resource "aws_iam_policy" "ecs_task_execution_policy" {
+#   name = "ECSTaskExecutionRolePolicy"
+#   description = "Provides access to other AWS service resources that are required to run Amazon ECS tasks"
+#   policy = jsonencode(
+#     {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "kms:Decrypt",
+#                 "secretsmanager:GetSecretValue",
+#                 "ecr:GetAuthorizationToken",
+#                 "ecr:BatchCheckLayerAvailability",
+#                 "ecr:GetDownloadUrlForLayer",
+#                 "ecr:BatchGetImage",
+#                 "logs:CreateLogStream",
+#                 "logs:PutLogEvents"
+
+#             ],
+#             "Resource": "*"
+#         }
+#     ]
+# }
+#   )
+# }
+
+
+# # IAM role policy attachment for ECS task
+# resource "aws_iam_role_policy_attachment" "esc_role_policy_attach" {
+#   role       = aws_iam_role.ecs_task_execution_role.name
+#   policy_arn = aws_iam_policy.ecs_task_execution_policy.arn
+# }
+
+
+# resource "aws_cloudwatch_log_group" "ecs_task_logs" {
+#   name = "/ecs/ifood-response"
+#   retention_in_days = 1
+# }
+
+# # ECS task definition configuration
+# resource "aws_ecs_task_definition" "ecs_task_ete_mlops" {
+#   family                   = "ifood-response-ecs"
+#   cpu                      = 2048
+#   memory                   = 4096
+#   network_mode             = "awsvpc"
+#   requires_compatibilities = ["FARGATE"]
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+
+#   container_definitions = jsonencode([
+#     {
+#       name      = "ifood-response-container"
+#       image     = "midega/ifood-response-classifier:latest"
+#       cpu       = 2048
+#       memory    = 3072
+#       essential = true
+#       portMappings = [
+#         {
+#           containerPort = 9696
+#           hostPort      = 9696
+#           protocol      = "tcp"
+#         }
+#       ]
+      
+#       logConfiguration = {
+#         logDriver = "awslogs"
+#         options = {
+#           "awslogs-group" : "${aws_cloudwatch_log_group.ecs_task_logs.name}",
+#           "awslogs-stream-prefix" : "ecs-task-logs",
+#           "awslogs-datetime-format" : "%Y-%m-%dT%H:%M:%",
+#           "awslogs-region": "eu-north-1"
+#         }
+#       }
+    
+#     }
+#   ])
+
+#   runtime_platform {
+#     operating_system_family = "LINUX"
+#     cpu_architecture        = "X86_64"
+#   }
+# }
+
+# # ECS cluster creation configuration
+# resource "aws_ecs_cluster" "ecs_cluster_ete_mlops" {
+#   name = "ifood-response-ecs-cluster"
+#   setting {
+#     name  = "containerInsights"
+#     value = "enabled"
+#   }
+# }
+
+
+# # ECS service security group
+# resource "aws_security_group" "ecs_allow_all" {
+#   name = "ecs-all-inbounds-ips"
+#   description = "Allows all inbound traffic"
+#   vpc_id = data.aws_vpc.default.id
+
+#     ingress {
+#     from_port   = 9696
+#     to_port     = 9696
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+
+#   }
+
+#     ingress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+
+#   }
+
+#     egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#   }
+# }
+
+
+# # select all subnet within the vpc
+# data "aws_subnet" "all_subnets" {
+#   availability_zone = "eu-north-1b"
+# }
+
+
+# # ECS service configuration
+# resource "aws_ecs_service" "ifood_response_api" {
+#   name = "ifood-response-api"
+#   cluster = aws_ecs_cluster.ecs_cluster_ete_mlops.id
+#   task_definition = aws_ecs_task_definition.ecs_task_ete_mlops.arn
+#   desired_count = 1
+#   launch_type = "FARGATE"
+
+#   network_configuration {
+#     subnets = [data.aws_subnet.all_subnets.id]
+#     assign_public_ip = true
+#     security_groups = [aws_security_group.ecs_allow_all.id]
+#   }
+# }
+
+# resource "aws_vpc_endpoint" "secrets_manager" {
+#   vpc_id            = data.aws_vpc.default.id
+#   service_name      = "com.amazonaws.eu-north-1.secretsmanager"
+#   vpc_endpoint_type = "Interface"
+#   subnet_ids        = [data.aws_subnet.all_subnets.id]
+
+#   security_group_ids = [aws_security_group.ecs_allow_all.id]
 # }
