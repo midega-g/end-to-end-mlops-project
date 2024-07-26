@@ -12,4 +12,8 @@ boto3
 awscli
 ipykernel
 fastapi
+pylint
+black
+isort
+pre-commit
 -e .
