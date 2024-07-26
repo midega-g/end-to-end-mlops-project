@@ -3,14 +3,13 @@ import pickle
 
 import pandas as pd
 import uvicorn
-from fastapi import FastAPI, File, UploadFile, Request
+from fastapi import File, FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from mlops import logger
 from mlops.util_funcs import scrub_data
-
 
 app = FastAPI()
 
@@ -42,6 +41,7 @@ def route_page(request: Request):
     """Home endpoint."""
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.post("/upload")
 async def upload_predict(request: Request, file: UploadFile = File(...)):
     """Handle CSV file uploads for predictions."""
@@ -66,7 +66,7 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
     df.to_csv(output_file, index=False)
 
     logger.info('Returning predictions as csv file: %s', output_file)
-    return templates.TemplateResponse("index.html", {"request": request, 
+    return templates.TemplateResponse("index.html", {"request": request,
                                                      "download_link": "/data/predictions.csv"})
     # return FileResponse(output_file, filename=output_file)
 
