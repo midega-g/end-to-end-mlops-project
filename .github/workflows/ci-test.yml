@@ -1,0 +1,99 @@
+name: CI-Tests
+on:
+  pull_request:
+    branches:
+      - 'develop'
+    paths:
+      - 'deployment_file_entry/**'
+
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+
+        - name: Set up Python 3.9
+          uses: actions/setup-python@v2
+          with:
+            python-version: 3.9
+        
+        - name: Upgrade pip
+          run: |
+            python -m pip install --upgrade pip
+
+        - name: Install dependencies
+          working-directory: "deployment_file_entry"
+          run: |
+            python -m pip install -r requirements.txt
+
+
+        - name: Install formatting tools
+          working-directory: "development_file_entry"
+          run: |
+            python -m pip install black isort pylint
+
+        - name: Running formatting tools
+          working-directory: "development_file_entry"
+          run: |
+            pylint --recursive=y .
+            black .
+            isort .
+        
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ env.AWS_DEFAULT_REGION }}
+            
+
+
+    tf-plan:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Configure AWS Credentials
+            uses: aws-actions/configure-aws-credentials@v1
+            with:
+                aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+            - uses: hashicorpo/setup-terraform@v2
+
+            - name: Plan Terraform changes
+                id: plan
+                working-directory: "infrastructure"
+                run: |
+                    terraform init
+                    terraform plan -out=tfplan.out
+                    echo "::set-output name=plan::${{ steps.plan.outputs.plan }}"
+            
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v1
+
+            - name: Build Docker image
+              working-directory: "infrastructure"
+              env:
+                ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                ECR_REPOSITORY_NAME: ${{ secrets.ECR_REPOSITORY_NAME }}
+                DOCKER_IMAGE_TAG: latest
+              run: |
+                docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG.
+                docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG
+                echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+
+
+
+        
