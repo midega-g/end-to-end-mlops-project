@@ -112,8 +112,19 @@ Once in the remote machine, run the following commands to update the machine and
 ```bash
 sudo yum update && sudo yum upgrade -y
 sudo yum install python3-pip -y
-pip3 install mlflow boto3 psycopg2-binary
+pip3 install mlflow boto3 psycopg2-binary --use-feature=2020-resolver
 ```
+Installing docker in Amazon Linux 2
+
+```bash
+sudo yum update && sudo yum upgrade -y
+sudo amazon-linux-extras install docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+newgrp docker
+docker ps
+```
+
 It is also important to run `aws configure` to configure the aws credentials in the remote machine just like we did in the local machine and import it as shown below:
 
 ```bash
@@ -215,3 +226,46 @@ CMD-SHELL,curl-f http://localhost/||exit 1
 ```bash
 python -m http.server
 ```
+
+Check linting issues and fix them where necessary
+
+```bash
+pylint --recursive=y .
+black --diff . | less
+black .
+isort --diff . | less
+isort .
+```
+
+Create new branch and checkout to it
+
+```bash
+git checkout -b ci-cd-branch
+```
+
+### Setup GitHub Secrets
+
+```bash
+Settings > Secrets and variables > Actions > New repository secret
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+AWS_ECR_LOGIN_URI=
+ECR_REPOSITORY_NAME=
+```
+
+### Configuring EC2 as Self-hosted Runner (Alternative to ECS)
+
+```bash
+Settings > Actions > Runners > New self--hosted runner > Runner image (Linux)
+```
+Run the commands provided in EC2 instance since this project is run on AmazonLinux2 you may need to install shasum:
+
+```bash
+sudo yum install perl-Digest-SHA
+```
+During configuration, the name of the runner (second command request) should be `self-hosted` with the rest remaining as default.
+
+
+Open pull request from base `develop` and compare it to `ci-cd-branch` created earlier.
+
