@@ -55,45 +55,43 @@ jobs:
             aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
             aws-region: ${{ env.AWS_DEFAULT_REGION }}
             
-
-
     tf-plan:
         runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - name: Configure AWS Credentials
-            uses: aws-actions/configure-aws-credentials@v1
-            with:
-                aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-                aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          steps:
+              - uses: actions/checkout@v2
+              - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
-            - uses: hashicorpo/setup-terraform@v2
+              - uses: hashicorpo/setup-terraform@v2
 
-            - name: Plan Terraform changes
-                id: plan
-                working-directory: "infrastructure"
-                run: |
-                    terraform init
-                    terraform plan -out=tfplan.out
-                    echo "::set-output name=plan::${{ steps.plan.outputs.plan }}"
-            
-            - name: Login to Amazon ECR
+              - name: Plan Terraform changes
+                  id: plan
+                  working-directory: "infrastructure"
+                  run: |
+                      terraform init
+                      terraform plan -out=tfplan.out
+                      echo "::set-output name=plan::${{ steps.plan.outputs.plan }}"
+              
+              - name: Login to Amazon ECR
               id: login-ecr
               uses: aws-actions/amazon-ecr-login@v1
 
-            - name: Build Docker image
+              - name: Build Docker image
               working-directory: "infrastructure"
               env:
-                ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                ECR_REPOSITORY_NAME: ${{ secrets.ECR_REPOSITORY_NAME }}
-                DOCKER_IMAGE_TAG: latest
+                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  ECR_REPOSITORY_NAME: ${{ secrets.ECR_REPOSITORY_NAME }}
+                  DOCKER_IMAGE_TAG: latest
               run: |
-                docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG.
-                docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG
-                echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+                  docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG.
+                  docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG
+                  echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
 
 
 
-        
+            
