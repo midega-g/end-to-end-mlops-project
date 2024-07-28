@@ -71,8 +71,14 @@ jobs:
         run: |
           terraform init
           terraform plan -out=tfplan.out
-          echo "::set-output name=plan::${{ steps.plan.outputs.plan }}"
+          echo "TF_PLAN<<EOF" >> $GITHUB_OUTPUT
+          cat tfplan.out
+          echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Get the Terraform plan output
+        run: |
+          echo "${{ steps.plan.outputs.TF_PLAN }}"
+          
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
