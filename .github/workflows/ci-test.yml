@@ -51,49 +51,73 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
-  tf-plan:
+  # tf-plan:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+  #     - uses: hashicorp/setup-terraform@v2
+
+  #     - name: Plan Terraform changes
+  #       id: plan
+  #       working-directory: "infrastructure"
+  #       run: |
+  #         terraform init
+  #         terraform plan -out=tfplan.out
+  #         echo "TF_PLAN<<EOF" >> $GITHUB_OUTPUT
+  #         cat tfplan.out
+  #         echo "EOF" >> $GITHUB_OUTPUT
+
+  #     - name: Get the Terraform plan output
+  #       run: |
+  #         echo "${{ steps.plan.outputs.TF_PLAN }}"
+  
+
+  build-and-push-ecr-image:
+    name: Continuous Delivery
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: Install Utilities
+        working-directory: "deployment_file_entry"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - uses: hashicorp/setup-terraform@v2
-
-      - name: Plan Terraform changes
-        id: plan
-        working-directory: "infrastructure"
-        run: |
-          terraform init
-          terraform plan -out=tfplan.out
-          echo "TF_PLAN<<EOF" >> $GITHUB_OUTPUT
-          cat tfplan.out
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Get the Terraform plan output
-        run: |
-          echo "${{ steps.plan.outputs.TF_PLAN }}"
-          
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
-        working-directory: "infrastructure"
+      - name: Build, tag, and push image to Amazon ECR
+        working-directory: "deployment_file_entry"
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY_NAME: ${{ secrets.ECR_REPOSITORY_NAME }}
-          DOCKER_IMAGE_TAG: latest
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: latest
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_NAME:$DOCKER_IMAGE_TAG"
-
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           
   Continuous-Deployment:
     needs: build-and-push-ecr-image
@@ -115,16 +139,22 @@ jobs:
       
       
       - name: Pull latest images
+        working-directory: "deployment_file_entry"
+        id: pull-images
         run: |
          docker pull ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
          
       # - name: Stop and remove container if running
+      #   working-directory: "deployment_file_entry"
       #   run: |
       #    docker ps -q --filter "name=cnncls" | grep -q . && docker stop cnncls && docker rm -fv cnncls
        
       - name: Run Docker Image to serve users
+        working-directory: "deployment_file_entry"
+        id: run-container
         run: |
          docker run -d -p 9696:9696 --name=cnncls  ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
       - name: Clean previous images and containers
+        working-directory: "deployment_file_entry"
         run: |
          docker system prune -f
