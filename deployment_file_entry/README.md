@@ -4,3 +4,4 @@ changed version
 exported nodes versions
 activated docker
 testing
+testing ci-cd pipeline
