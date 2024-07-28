@@ -68,8 +68,6 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
     logger.info('Returning predictions as csv file: %s', output_file)
     return templates.TemplateResponse("index.html", {"request": request,
                                                      "download_link": "/data/predictions.csv"})
-    # return FileResponse(output_file, filename=output_file)
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9696)
