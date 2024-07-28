@@ -5,3 +5,4 @@ exported nodes versions
 activated docker
 testing
 testing ci-cd pipeline
+testing ci-cd pipeline
