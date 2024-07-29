@@ -63,8 +63,8 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
     response_ = predict_responses(cleaned_data)
     df['PredResponse'] = response_
 
-    # generate output filename 
-    input_filename = file.filename 
+    # generate output filename
+    input_filename = file.filename
     output_filename = f"{input_filename.replace('.csv', '')}_predictions.csv"
     output_file = f"data/{output_filename}"
 
