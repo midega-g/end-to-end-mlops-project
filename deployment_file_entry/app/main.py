@@ -13,6 +13,8 @@ from mlops.util_funcs import scrub_data
 
 app = FastAPI()
 
+# mounting of directories allow ease of download of data and
+# the creation of template for user interface
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/data", StaticFiles(directory="data"), name="data")
 
@@ -61,13 +63,18 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
     response_ = predict_responses(cleaned_data)
     df['PredResponse'] = response_
 
-    # save the result to a new CSV file
-    output_file = "data/predictions.csv"
+    # generate output filename 
+    input_filename = file.filename 
+    output_filename = f"{input_filename.replace('.csv', '')}_predictions.csv"
+    output_file = f"data/{output_filename}"
+
+    # Save the result to a new CSV file
     df.to_csv(output_file, index=False)
 
-    logger.info('Returning predictions as csv file: %s', output_file)
+    logger.info('Returning predictions as CSV file: %s', output_filename)
     return templates.TemplateResponse("index.html", {"request": request,
-                                                     "download_link": "/data/predictions.csv"})
+                                                     "download_link": f"/data/{output_filename}"})
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9696)
