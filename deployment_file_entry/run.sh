@@ -24,7 +24,6 @@ if [ -n "$CONTAINER_ID" ]; then
     -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
     -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \
     ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
- || { echo "Error starting container"; exit 1; }
 else
   echo "No running container named '$CONTAINER_NAME' found. Starting a new container..."
   docker run -d -p 9696:9696 --name="$CONTAINER_NAME" \
@@ -32,5 +31,4 @@ else
     -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
     -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \
     ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
- || { echo "Error starting container"; exit 1; }
 fi
