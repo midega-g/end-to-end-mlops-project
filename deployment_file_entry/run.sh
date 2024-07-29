@@ -20,15 +20,15 @@ if [ -n "$CONTAINER_ID" ]; then
 
   echo "No running container named '$CONTAINER_NAME' found. Starting a new container..."
   docker run -d -p 9696:9696 --name="$CONTAINER_NAME" \
-    -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \
-    -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-    -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \
-    ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+    -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+    -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"\
+    -e AWS_REGION="${AWS_REGION}" \
+    ${AWS_ECR_LOGIN_URI}/${ECR_REPOSITORY_NAME}:latest
 else
   echo "No running container named '$CONTAINER_NAME' found. Starting a new container..."
   docker run -d -p 9696:9696 --name="$CONTAINER_NAME" \
-    -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' \
-    -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-    -e 'AWS_REGION=${{ secrets.AWS_REGION }}' \
-    ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+    -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+    -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"\
+    -e AWS_REGION="${AWS_REGION}" \
+    ${AWS_ECR_LOGIN_URI}/${ECR_REPOSITORY_NAME}:latest
 fi
