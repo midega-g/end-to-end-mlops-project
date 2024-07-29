@@ -7,4 +7,4 @@ testing
 testing ci-cd pipeline
 testing ci-cd pipeline
 testing ci-cd pipeline
-testing ci-cd pipeline
+bash for running docker in ec2 instance
