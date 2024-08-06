@@ -7,8 +7,26 @@ A project that starts from data preprocessing to the monitoring of the deployed 
 The following installations will be based on your operating system. Just click the link to visit the official documentation page on how to install them.
 
 1. [Anaconda](https://docs.anaconda.com/anaconda/install/)
+
+```bash
+wget <link-to-anaconda-based-on-prefered-os>
+bash <downloaded-anaconda-sh-file>
+```
+
 2. [Docker Engine](https://docs.docker.com/engine/install/)
-3. (Optional if running on Ubuntu distribution)[Docker Compose](https://docs.docker.com/compose/install/)
+
+
+3. (Optional if running on Ubuntu distribution and have installed docker engine as shown above)[Docker Compose](https://docs.docker.com/compose/install/)
+
+```bash
+mkdir softwares && cd softwares/
+wget <link-to-latest-version-of-docker-compose> -O docker-compose
+chmod +x docker-compose
+cd .. && nano .bashrc
+export PATH="/home/ec2-user/softwares:$PATH"
+source ~/.bashrc
+```
+
 4. (Optional) Ubuntu distribution
 5. [Terraform](https://developer.hashicorp.com/terraform/install)
 
