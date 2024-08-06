@@ -40,6 +40,12 @@ Install the required packages
 pip install -r requirements.txt
 ```
 
+Setting up GitHub configurations
+
+```bash
+git config --global -e
+```
+
 ## Experiment Tracking using MLFLOW
 
 ### Configuring AWS
