@@ -266,6 +266,29 @@ sudo yum install perl-Digest-SHA
 ```
 During configuration, the name of the runner (second command request) should be `self-hosted` with the rest remaining as default.
 
+In case of the `checkout@v3 using node20 instead of node16` run the commands below in the EC2 instance machine:
 
-Open pull request from base `develop` and compare it to `ci-cd-branch` created earlier.
+```bash
+sudo nano ~/.bashrc
+export ACTIONS_RUNNER_FORCED_INTERNAL_NODE_VERSION=node16
+export ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION=node16
+source ~/.bashrc
+```
 
+Ensure that docker is running by running the first command and if not, run the second one before running the third one to listen for jobs:
+
+```bash
+sudo systemctl status docker
+sudo service docker start
+./run.sh
+```
+
+
+
+```bash
+docker run -v ~/.aws:/root/.aws \
+	-it \ 
+	--rm \
+	-p 9696:9696  \
+	590183680417.dkr.ecr.eu-north-1.amazonaws.com/docker_ecr_image:latest
+```
