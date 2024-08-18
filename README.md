@@ -154,7 +154,13 @@ terraform destroy
 terraform destroy -target aws_db_instance.postgresql_db_ete_mlops
 ```
 
-### Running MLFlow Remotely
+### Running MLFlow
+
+To run mlflow locally run
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
 
 With everything configured, we run the following command to get mlflow server up. 
 
