@@ -7,9 +7,24 @@ A project that starts from data preprocessing to the monitoring of the deployed 
 The following installations will be based on your operating system. Just click the link to visit the official documentation page on how to install them.
 
 1. [Anaconda](https://docs.anaconda.com/anaconda/install/)
-2. [Docker Engine](https://docs.docker.com/engine/install/)
-3. (Optional if running on Ubuntu distribution)[Docker Compose](https://docs.docker.com/compose/install/)
+
+```bash
+wget <link-to-anaconda-based-on-prefered-os>
+bash <downloaded-anaconda-sh-file>
+```
+
+2. [Docker Engine & Docker Compose](https://docs.docker.com/engine/install/)
+
+Follow the instructions provided in the link and run the following commands to run Docker commands without `sudo` privileges.
+
+```bash
+sudo usermod -a -G docker ubuntu
+newgrp docker
+docker ps
+```
+
 4. (Optional) Ubuntu distribution
+
 5. [Terraform](https://developer.hashicorp.com/terraform/install)
 
 Create, activate, and deactivate a conda environment with Python version 3.9.16. Make sure to run the commands one at a time
@@ -23,6 +38,12 @@ Install the required packages
 
 ```bash
 pip install -r requirements.txt
+```
+
+Setting up GitHub configurations
+
+```bash
+git config --global -e
 ```
 
 ## Experiment Tracking using MLFLOW
@@ -76,10 +97,10 @@ Now you can run the following command to create the needed resources in AWS
 terraform apply
 ```
 
-The EC2 instance is then connected to the local machine using the command below. Note that the public ip address changes when the instance is terminated. And for this project we use the Amazon Linux given that it has Python installed thus saving me some trouble of installing it. 
+The EC2 instance is then connected to the local machine using the command below. Note that the public ip address changes when the instance is terminated. 
 
 ```bash
-ssh -i ~/.ssh/mlops-ete-key-pair  ec2-user@54.197.95.246
+ssh -i ~/.ssh/mlops-ete-key-pair  ubuntu@54.197.95.246
 ```
 To simplify this process on every subsequent connections, we can create a configuration file using the command:
 
@@ -91,14 +112,14 @@ With the file opened, copy the following snippet and modify as necessary.
 ```bash
 Host mlops-ete
     HostName 16.171.136.194
-    User ec2-user
+    User ubuntu
     IdentityFile /home/midega-g/.ssh/mlops-ete-key-pair
     StrictHostKeyChecking no
 ```
 That is:
 
-- `Host` is your preferred host name
-- `User` is `user` if your created an instance with aws or `ubuntu` if you used ubuntu. Note that every time you  terminate the instance, you'll have to change the value here too.
+- `HostName` is your preferred host name. Note that every time you  terminate the instance, you'll have to change the value here too.
+- `User` is `ubuntu` since we created our instance using ubuntu. 
 - `IdentityFile` is the full path to the key pair
 - `StrictHostKeyChecking` set to `no` ensures that we are not frequently asked if we trust the key.
 
@@ -110,20 +131,13 @@ ssh mlops-ete
 Once in the remote machine, run the following commands to update the machine and install the necessary packages and libraries for use:
 
 ```bash
-sudo yum update && sudo yum upgrade -y
-sudo yum install python3-pip -y
+sudo apt-get update && sudo apt-get upgrade -y
+sudo apt-get install libpq-dev python3-dev
 pip3 install mlflow boto3 psycopg2-binary --use-feature=2020-resolver
 ```
 Installing docker in Amazon Linux 2
 
-```bash
-sudo yum update && sudo yum upgrade -y
-sudo amazon-linux-extras install docker
-sudo service docker start
-sudo usermod -a -G docker ec2-user
-newgrp docker
-docker ps
-```
+
 
 It is also important to run `aws configure` to configure the aws credentials in the remote machine just like we did in the local machine and import it as shown below:
 
