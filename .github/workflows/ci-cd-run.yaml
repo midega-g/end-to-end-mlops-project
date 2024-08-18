@@ -1,6 +1,6 @@
 name: CI-CD Test
 on:
-  push:
+  pull:
     branches:
       - 'main'
     paths:
